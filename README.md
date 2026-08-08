@@ -169,7 +169,7 @@ If you find this work useful, please cite:
 ```bibtex
 @article{DDL-UMamba,
     title={DDL-UMamba: Geometric Residual Learning for 3D Medical Image Segmentation},
-    author={Das, Dishant and Singh, Roland and Ghosal, Palash and Pradhan, Ashis},
+    author={Das, Singh, Ghosal, Pradhan},
     year={2026}
 }
 ```
