@@ -1,0 +1,23 @@
+# Medical Datasets & nnUNet Folders
+nnUNet_raw/
+nnUNet_preprocessed/
+nnUNet_results/
+ACDC_SOURCE/
+dataset/
+*.zip
+*.nii.gz
+*.npz
+*.pkl
+*.npy
+
+# Python Environments
+__pycache__/
+*.pyc
+venv/
+env/
+.env
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store.venv/
