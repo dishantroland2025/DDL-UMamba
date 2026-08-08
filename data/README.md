@@ -5,25 +5,24 @@ Please organize the dataset as follows:
 ```
 data/
 ├── nnUNet_raw/
-│   ├── Dataset701_AbdomenCT/
+│   ├── Dataset017_Synapse/
 │   │   ├── imagesTr
-│   │   │   ├── FLARE22_Tr_0001_0000.nii.gz
-│   │   │   ├── FLARE22_Tr_0002_0000.nii.gz
+│   │   │   ├── img0001_0000.nii.gz
+│   │   │   ├── img0002_0000.nii.gz
 │   │   │   ├── ...
 │   │   ├── labelsTr
-│   │   │   ├── FLARE22_Tr_0001.nii.gz
-│   │   │   ├── FLARE22_Tr_0002.nii.gz
+│   │   │   ├── label0001.nii.gz
+│   │   │   ├── label0002.nii.gz
 │   │   │   ├── ...
 │   │   ├── dataset.json
-│   ├── Dataset702_AbdomenMR/
+│   ├── Dataset027_ACDC/
 │   │   ├── imagesTr
-│   │   │   ├── amos_0507_0000.nii.gz
-│   │   │   ├── amos_0508_0000.nii.gz
+│   │   │   ├── patient001_frame01_0000.nii.gz
+│   │   │   ├── patient001_frame12_0000.nii.gz
 │   │   │   ├── ...
 │   │   ├── labelsTr
-│   │   │   ├── amos_0507.nii.gz
-│   │   │   ├── amos_0508.nii.gz
+│   │   │   ├── patient001_frame01.nii.gz
+│   │   │   ├── patient001_frame12.nii.gz
 │   │   │   ├── ...
 │   │   ├── dataset.json
-│   ├── ...
 ```
