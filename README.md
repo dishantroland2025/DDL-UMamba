@@ -1,108 +1,182 @@
-# [U-Mamba](https://wanglab.ai/u-mamba.html)
+# DDL-UMamba: Deep Delta Learning for Boundary-Aware Medical Image Segmentation
 
-Official repository for U-Mamba: Enhancing Long-range Dependency for Biomedical Image Segmentation.
-Welcome to join our [mailing list](https://forms.gle/bLxGb5SEpdLCUChQ7) to get updates.
+Official repository for **DDL-UMamba**, which introduces a Deep Delta Learning block with channel compression (DDL-CC) into the U-Mamba segmentation backbone. DDL-CC replaces the backbone's additive state-space mixing with an exact, matrix-valued delta-rule update at every voxel, supervised toward label-derived object boundaries via a boundary-spectral loss.
 
-## Installation 
+This repository builds directly on the official U-Mamba codebase and the nnU-Net framework.
 
-Requirements: `Ubuntu 20.04`, `CUDA 11.8`
+## Method overview
 
-1. Create a virtual environment: `conda create -n umamba python=3.10 -y` and `conda activate umamba `
-2. Install [Pytorch](https://pytorch.org/get-started/previous-versions/#linux-and-windows-4) 2.0.1: `pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118`
-3. Install [Mamba](https://github.com/state-spaces/mamba): `pip install causal-conv1d>=1.2.0` and `pip install mamba-ssm --no-cache-dir`
-4. Download code: `git clone https://github.com/bowang-lab/U-Mamba`
-5. `cd U-Mamba/umamba` and run `pip install -e .`
+At each encoder stage, the DDL-CC block:
 
+*   Expands each feature into a small associative state of $d_v$ slots.
+*   Predicts a unit key $k$, a bounded gate $\beta \in [0, 2]$, and a value $v$ from a shared context head.
+*   Applies a generalized Householder delta-rule update: $X' = X + \beta k(v - X^T k)^T = H(\beta,k)X + \beta kv^T$, where $H(\beta,k) = I - \beta kk^T$.
+*   Compresses the refined state back to the original channel count via an $\ell_2$-normalized channel convolution.
 
-sanity test: Enter python command-line interface and run
+The gate $\beta$ is additionally supervised by a boundary-spectral loss, which trains $\beta$ toward a morphological boundary map derived from the ground-truth labels (high on inter-class interfaces, low in homogeneous interiors), making $\beta$ an interpretable, anatomy-aligned signal without any auxiliary post-hoc attribution method.
 
-```bash
+Two model variants are provided, following U-Mamba's naming convention:
+
+*   **DDL-UMamba_Bot** — a single DDL-CC block at the bottleneck only.
+*   **DDL-UMamba_Enc** — a DDL-CC block after every encoder stage (primary model).
+
+## Installation
+
+**Requirements:** Ubuntu 20.04, CUDA 11.8
+
+1.  **Create a virtual environment:**
+    ```bash
+    conda create -n ddlumamba python=3.10 -y
+    conda activate ddlumamba
+    ```
+2.  **Install PyTorch 2.0.1+:**
+    ```bash
+    pip install torch==2.2.0 torchvision --index-url [https://download.pytorch.org/whl/cu121](https://download.pytorch.org/whl/cu121)
+    ```
+3.  **Install Mamba:**
+    ```bash
+    pip install causal-conv1d>=1.2.0
+    pip install mamba-ssm --no-cache-dir
+    ```
+4.  **Download this repository:**
+    ```bash
+    git clone [https://github.com/dishantdas2004/DDL-UMamba](https://github.com/dishantdas2004/DDL-UMamba)
+    cd DDL-UMamba/umamba
+    pip install -e .
+    ```
+
+**Sanity test** — enter the Python command-line interface and run:
+```python
 import torch
 import mamba_ssm
 ```
 
-![network](https://github.com/bowang-lab/U-Mamba/blob/main/assets/U-Mamba-network.png)
+## Datasets
 
+We evaluate on two public benchmarks:
 
+| Dataset | Modality | Targets | Split |
+| :--- | :--- | :--- | :--- |
+| **Synapse** (Dataset017_Synapse) | Abdominal CT | 8 organs: aorta, gallbladder, kidneys (L/R), liver, pancreas, spleen, stomach | 18 train / 12 test (TransUNet split) |
+| **ACDC** (Dataset027_ACDC) | Cardiac cine-MRI | 3 structures: RV, MYO, LV | 160 train / 40 test |
 
-https://github.com/bowang-lab/U-Mamba/assets/19947331/1ac552d6-4ffd-4909-ba31-7b48644fd104
+Organize the data as follows, following nnU-Net's raw-data convention:
 
+```text
+data/
+├── nnUNet_raw/
+│   ├── Dataset017_Synapse/
+│   │   ├── imagesTr/
+│   │   │   ├── img0001_0000.nii.gz
+│   │   │   ├── img0002_0000.nii.gz
+│   │   │   └── ...
+│   │   ├── labelsTr/
+│   │   │   ├── label0001.nii.gz
+│   │   │   ├── label0002.nii.gz
+│   │   │   └── ...
+│   │   └── dataset.json
+│   └── Dataset027_ACDC/
+│       ├── imagesTr/
+│       │   ├── patient001_frame01_0000.nii.gz
+│       │   ├── patient001_frame12_0000.nii.gz
+│       │   └── ...
+│       ├── labelsTr/
+│       │   ├── patient001_frame01.nii.gz
+│       │   ├── patient001_frame12.nii.gz
+│       │   └── ...
+│       └── dataset.json
+```
 
-
-
-## Model Training
-Download dataset [here](https://drive.google.com/drive/folders/1DmyIye4Gc9wwaA7MVKFVi-bWD2qQb-qN?usp=sharing) and put them into the `data` folder. U-Mamaba is built on the popular [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) framework. If you want to train U-Mamba on your own dataset, please follow this [guideline](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/dataset_format.md) to prepare the dataset. 
-
-### Preprocessing
+## Preprocessing
 
 ```bash
 nnUNetv2_plan_and_preprocess -d DATASET_ID --verify_dataset_integrity
 ```
 
-### Train 2D models
+## Model training
 
-- Train 2D `U-Mamba_Bot` model
+**Train 3D models**
 
+Train DDL-UMamba_Bot (DDL-CC at the bottleneck only):
 ```bash
-nnUNetv2_train DATASET_ID 2d all -tr nnUNetTrainerUMambaBot
+nnUNetv2_train DATASET_ID 3d_fullres all -tr nnUNetTrainerDDLUMambaBot
 ```
 
-- Train 2D `U-Mamba_Enc` model
-
+Train DDL-UMamba_Enc (DDL-CC at every encoder stage, primary model):
 ```bash
-nnUNetv2_train DATASET_ID 2d all -tr nnUNetTrainerUMambaEnc
+nnUNetv2_train DATASET_ID 3d_fullres all -tr nnUNetTrainerDDLUMambaEnc
 ```
 
-### Train 3D models
+**Key hyperparameters used in our experiments** (see the paper for full detail):
 
-- Train 3D `U-Mamba_Bot` model
-
-```bash
-nnUNetv2_train DATASET_ID 3d_fullres all -tr nnUNetTrainerUMambaBot
-```
-
-- Train 3D `U-Mamba_Enc` model
-
-```bash
-nnUNetv2_train DATASET_ID 3d_fullres all -tr nnUNetTrainerUMambaEnc
-```
-
+| Setting | Synapse | ACDC |
+| :--- | :--- | :--- |
+| **$d_v$ (expansion factor)** | 4 | 3 |
+| **Patch size** | 48×192×192 | 20×256×224 |
+| **Batch size** | 2 | 4 |
+| **Boundary-spectral loss weight $\gamma$** | 0.1 | 0.1 |
+| **$\lambda_{bd} / \lambda_{sp}$** | 0.5 / 0.05 | 0.5 / 0.05 |
 
 ## Inference
 
-- Predict testing cases with `U-Mamba_Bot` model
-
+Predict testing cases with DDL-UMamba_Bot:
 ```bash
-nnUNetv2_predict -i INPUT_FOLDER -o OUTPUT_FOLDER -d DATASET_ID -c CONFIGURATION -f all -tr nnUNetTrainerUMambaBot --disable_tta
+nnUNetv2_predict -i INPUT_FOLDER -o OUTPUT_FOLDER -d DATASET_ID -c 3d_fullres -f all -tr nnUNetTrainerDDLUMambaBot --disable_tta
 ```
 
-- Predict testing cases with `U-Mamba_Enc` model
-
+Predict testing cases with DDL-UMamba_Enc:
 ```bash
-nnUNetv2_predict -i INPUT_FOLDER -o OUTPUT_FOLDER -d DATASET_ID -c CONFIGURATION -f all -tr nnUNetTrainerUMambaEnc --disable_tta
+nnUNetv2_predict -i INPUT_FOLDER -o OUTPUT_FOLDER -d DATASET_ID -c 3d_fullres -f all -tr nnUNetTrainerDDLUMambaEnc --disable_tta
 ```
 
-> `CONFIGURATION` can be `2d` and `3d_fullres` for 2D and 3D models, respectively.
+## Evaluation
+
+Evaluation scripts are provided in `evaluation/`, adapted from U-Mamba's original evaluation code:
+
+```bash
+python evaluation/Synapse_DSC.py  --gt_path <labelsTs_dir> --seg_path <predictions_dir> --save_path <output.csv>
+python evaluation/Synapse_HD95.py --gt_path <labelsTs_dir> --seg_path <predictions_dir> --save_path <output.csv>
+python evaluation/ACDC_DSC.py     --gt_path <labelsTs_dir> --seg_path <predictions_dir> --save_path <output.csv>
+```
+
+## Results
+
+| Dataset | Model | Mean DSC (%) | HD95 (mm) | Params (M) | FLOPs (G) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Synapse | U-Mamba_Enc (backbone) | 82.83 | 27.17 | — | — |
+| Synapse | DDL-UMamba_Enc | **86.93** | **17.56** | 44.61 | 1789.5 |
+| ACDC | U-Mamba_Enc (backbone) | 92.22 | — | — | — |
+| ACDC | DDL-UMamba_Enc | **92.46** | — | 44.10 | 1167.3 |
+
+DDL-CC adds under 5% parameter overhead to the U-Mamba backbone. The largest per-organ gains on Synapse occur on the gallbladder (+10.13) and pancreas (+14.84) — small, thin-walled, low-contrast structures — with the myocardium showing the largest single-structure gain on ACDC, consistent with the mechanism specifically improving boundary fidelity on thin and low-contrast anatomy.
 
 ## Remarks
 
-1. Path settings
-
-The default data directory for U-Mamba is preset to U-Mamba/data. Users with existing nnUNet setups who wish to use alternative directories for `nnUNet_raw`, `nnUNet_preprocessed`, and `nnUNet_results` can easily adjust these paths in umamba/nnunetv2/path.py to update your specific nnUNet data directory locations, as demonstrated below:
-
+**Path settings.** The default data directory is preset to `DDL-UMamba/data`. To use a different location, adjust `umamba/nnunetv2/path.py`:
 ```python
-# An example to set other data path,
-base = '/home/user_name/Documents/U-Mamba/data'
-nnUNet_raw = join(base, 'nnUNet_raw') # or change to os.environ.get('nnUNet_raw')
-nnUNet_preprocessed = join(base, 'nnUNet_preprocessed') # or change to os.environ.get('nnUNet_preprocessed')
-nnUNet_results = join(base, 'nnUNet_results') # or change to os.environ.get('nnUNet_results')
+base = '/home/user_name/Documents/DDL-UMamba/data'
+nnUNet_raw = join(base, 'nnUNet_raw')
+nnUNet_preprocessed = join(base, 'nnUNet_preprocessed')
+nnUNet_results = join(base, 'nnUNet_results')
 ```
 
-2. AMP could lead to nan in the Mamba module. We also provide a trainer without AMP: https://github.com/bowang-lab/U-Mamba/blob/main/umamba/nnunetv2/training/nnUNetTrainer/nnUNetTrainerUMambaEncNoAMP.py
+**Mixed precision.** Our models were trained successfully with automatic mixed precision (AMP) enabled. As with the original U-Mamba, AMP has occasionally been reported to produce NaNs in the Mamba module on some setups; if this occurs, disable AMP in your trainer as a fallback.
 
 ## Paper
 
+If you find this work useful, please cite:
+
+```bibtex
+@article{DDL-UMamba,
+    title={DDL-UMamba: Geometric Residual Learning for 3D Medical Image Segmentation},
+    author={Das, Dishant and Singh, Roland and Ghosal, Palash and Pradhan, Ashis},
+    year={2026}
+}
 ```
+
+This work builds on U-Mamba:
+
+```bibtex
 @article{U-Mamba,
     title={U-Mamba: Enhancing Long-range Dependency for Biomedical Image Segmentation},
     author={Ma, Jun and Li, Feifei and Wang, Bo},
@@ -111,8 +185,6 @@ nnUNet_results = join(base, 'nnUNet_results') # or change to os.environ.get('nnU
 }
 ```
 
-
 ## Acknowledgements
 
-We acknowledge all the authors of the employed public datasets, allowing the community to use these valuable resources for research purposes. We also thank the authors of [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) and [Mamba](https://github.com/state-spaces/mamba) for making their valuable code publicly available.
-
+This repository is built on top of the official U-Mamba codebase; we thank Jun Ma, Feifei Li, and Bo Wang for making it publicly available. We also thank the authors of nnU-Net, Mamba, and Deep Delta Learning for their publicly released code, and the organisers of the Synapse Multi-Atlas Labeling and ACDC challenges for the public datasets.
