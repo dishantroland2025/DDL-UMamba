@@ -93,13 +93,13 @@ data/
 nnUNetv2_plan_and_preprocess -d DATASET_ID --verify_dataset_integrity
 ```
 
-Architecture
+## Architecture
 
 The overall architecture of DDL-UMamba is illustrated below. DDL-UMamba follows the U-Mamba encoder-decoder framework and incorporates the proposed Deep Delta Learning with Channel Compression (DDL-CC) block into the segmentation backbone.
 
-<p align="center"> <img src="Architecture.png" alt="DDL-UMamba Architecture" width="900"> </p>
+<p align="center"> <img src="DDL_UMamba_Diagram.png" alt="DDL-UMamba Architecture" width="900"> </p>
 
-Figure: Overall architecture of DDL-UMamba. The DDL-CC block refines intermediate feature representations using a matrix-valued delta-rule update and compresses the resulting state back to the original channel dimension. In DDL-UMamba_Bot, the DDL-CC block is applied only at the bottleneck, while DDL-UMamba_Enc applies DDL-CC after each encoder stage.
+Figure: DDL-UMamba$_{\mathrm{Enc}}$ architecture. (a) Backbone: U-Mamba encoder-decoder with a DDL-CC block after every encoder stage. (b) Refinement: DDL-CC expands the feature, predicts a key $k$, gate $\beta \in [0,2]$, and value $v$, and applies a non-expansive Householder update $X' = H(\beta,k)X + \beta kv^\top$ before $\ell_2$-normalized compression. (c) Supervision: $\beta$ is trained toward a label-derived boundary map, optimal at $\beta^*\approx0.95$ on interfaces and 0 in interiors, interpretable by construction, with the largest gains on thin structures (myocardium, gallbladder, pancreas).
 
 ## Model training
 
