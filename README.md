@@ -93,6 +93,14 @@ data/
 nnUNetv2_plan_and_preprocess -d DATASET_ID --verify_dataset_integrity
 ```
 
+Architecture
+
+The overall architecture of DDL-UMamba is illustrated below. DDL-UMamba follows the U-Mamba encoder-decoder framework and incorporates the proposed Deep Delta Learning with Channel Compression (DDL-CC) block into the segmentation backbone.
+
+<p align="center"> <img src="Architecture.png" alt="DDL-UMamba Architecture" width="900"> </p>
+
+Figure: Overall architecture of DDL-UMamba. The DDL-CC block refines intermediate feature representations using a matrix-valued delta-rule update and compresses the resulting state back to the original channel dimension. In DDL-UMamba_Bot, the DDL-CC block is applied only at the bottleneck, while DDL-UMamba_Enc applies DDL-CC after each encoder stage.
+
 ## Model training
 
 **Train 3D models**
