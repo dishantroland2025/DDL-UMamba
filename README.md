@@ -196,4 +196,4 @@ This work builds on U-Mamba:
 
 ## Acknowledgements
 
-This repository is built on top of the official U-Mamba codebase; we thank Jun Ma, Feifei Li, and Bo Wang for making it publicly available. We also thank the authors of nnU-Net, Mamba, and Deep Delta Learning for their publicly released code, and the organisers of the Synapse Multi-Atlas Labeling and ACDC challenges for the public datasets.
+This repository is built on top of the official U-Mamba codebase; we thank Jun Ma, Feifei Li, and Bo Wang for making it publicly available. We also thank the authors of nnU-Net, Mamba, and Deep Delta Learning for their publicly released code, and the organisers of the Synapse Multi-Atlas Labeling, ACDC and AMOS challenges for the public datasets.
