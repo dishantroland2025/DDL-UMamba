@@ -59,6 +59,7 @@ We evaluate on two public benchmarks:
 | :--- | :--- | :--- | :--- |
 | **Synapse** (Dataset017_Synapse) | Abdominal CT | 8 organs: aorta, gallbladder, kidneys (L/R), liver, pancreas, spleen, stomach | 18 train / 12 test (TransUNet split) |
 | **ACDC** (Dataset027_ACDC) | Cardiac cine-MRI | 3 structures: RV, MYO, LV | 160 train / 40 test |
+| **AMOS MRI** (Dataset702_AbdomenMR) | Abdominal MRI | 13 organs: spleen, kidneys (L/R), gallbladder, esophagus, liver, stomach, aorta, IVC, pancreas, adrenal glands (L/R), duodenum | 60 train / 50 test (U-Mamba split) |
 
 Organize the data as follows, following nnU-Net's raw-data convention:
 
